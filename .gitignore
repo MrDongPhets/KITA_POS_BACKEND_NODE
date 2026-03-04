@@ -6,6 +6,9 @@
 # Node modules
 node_modules/
 
+# TypeScript compiled output
+dist/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
