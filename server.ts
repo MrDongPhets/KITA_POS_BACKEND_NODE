@@ -1,6 +1,7 @@
 // server.ts - SECURED VERSION
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
+import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './src/config/swagger';
 import { initializeDatabase } from './src/config/database';
@@ -68,16 +69,27 @@ if (!isProduction) {
   console.log('🔒 Swagger disabled (PRODUCTION MODE)');
 }
 
-// Root endpoint - Simple API info (no sensitive data)
-app.get('/', (req: Request, res: Response) => {
-  res.json({
-    name: 'KitaPOS API',
-    version: '2.2.0',
-    status: 'active',
-    timestamp: new Date().toISOString(),
-    documentation: isProduction ? 'Available in development mode only' : '/api-docs'
+// Desktop mode: serve React frontend static files
+// FRONTEND_PATH is set by Electron when launching the backend
+if (process.env.FRONTEND_PATH) {
+  const frontendPath = process.env.FRONTEND_PATH;
+  console.log('🖥️ Desktop mode: serving frontend from', frontendPath);
+  app.use(express.static(frontendPath));
+  app.get('/', (_req: Request, res: Response) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
   });
-});
+} else {
+  // Root endpoint - Simple API info (no sensitive data)
+  app.get('/', (_req: Request, res: Response) => {
+    res.json({
+      name: 'KitaPOS API',
+      version: '2.2.0',
+      status: 'active',
+      timestamp: new Date().toISOString(),
+      documentation: isProduction ? 'Available in development mode only' : '/api-docs'
+    });
+  });
+}
 
 // Add diagnostic route (only in development or with special header)
 app.get('/diagnostic', async (req: Request, res: Response) => {
@@ -94,7 +106,15 @@ app.use('/', routes);
 // Error Handler
 app.use(errorHandler);
 
-// 404 Handler
+// Desktop SPA fallback: serve index.html for all unmatched routes
+if (process.env.FRONTEND_PATH) {
+  const frontendPath = process.env.FRONTEND_PATH;
+  app.use('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
+
+// 404 Handler (non-desktop mode only)
 app.use('*', (req: Request, res: Response) => {
   const response: Record<string, unknown> = {
     error: 'Endpoint not found',

@@ -27,6 +27,11 @@ function getAllowedOrigins(): string[] {
     origins.push(`https://${process.env.VERCEL_URL}`);
   }
 
+  // Desktop mode: allow localhost
+  if (process.env.FRONTEND_PATH) {
+    origins.push('http://localhost:3001', 'http://127.0.0.1:3001');
+  }
+
   // Additional allowed origins (comma-separated)
   if (process.env.ALLOWED_ORIGINS) {
     const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
