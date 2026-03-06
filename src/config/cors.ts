@@ -32,6 +32,13 @@ function getAllowedOrigins(): string[] {
     origins.push('http://localhost:3001', 'http://127.0.0.1:3001');
   }
 
+  // Capacitor mobile app origins (Android & iOS)
+  origins.push(
+    'https://localhost',
+    'capacitor://localhost',
+    'ionic://localhost',
+  );
+
   // Additional allowed origins (comma-separated)
   if (process.env.ALLOWED_ORIGINS) {
     const additionalOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());

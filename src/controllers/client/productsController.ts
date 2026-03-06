@@ -360,15 +360,16 @@ async function updateProduct(req: Request, res: Response): Promise<void> {
       }
     }
 
-    // Convert numeric fields - FIX THE TYPO HERE
-    if (updateData.default_price) updateData.default_price = parseFloat(updateData.default_price as string);
-    if (updateData.manila_price) updateData.manila_price = parseFloat(updateData.manila_price as string);
-    if (updateData.delivery_price) updateData.delivery_price = parseFloat(updateData.delivery_price as string);
-    if (updateData.wholesale_price) updateData.wholesale_price = parseFloat(updateData.wholesale_price as string);
-    if (updateData.stock_quantity !== undefined) updateData.stock_quantity = parseInt(updateData.stock_quantity as string);
-    if (updateData.min_stock_level) updateData.min_stock_level = parseInt(updateData.min_stock_level as string);
-    if (updateData.max_stock_level) updateData.max_stock_level = parseInt(updateData.max_stock_level as string);
-    if (updateData.weight) updateData.weight = parseFloat(updateData.weight as string); // FIXED: was "parssrc"
+    // Convert numeric fields, empty strings → null for optional numeric columns
+    if (updateData.default_price !== undefined) updateData.default_price = updateData.default_price !== '' ? parseFloat(updateData.default_price as string) : null;
+    if (updateData.manila_price !== undefined) updateData.manila_price = updateData.manila_price !== '' ? parseFloat(updateData.manila_price as string) : null;
+    if (updateData.delivery_price !== undefined) updateData.delivery_price = updateData.delivery_price !== '' ? parseFloat(updateData.delivery_price as string) : null;
+    if (updateData.wholesale_price !== undefined) updateData.wholesale_price = updateData.wholesale_price !== '' ? parseFloat(updateData.wholesale_price as string) : null;
+    if (updateData.stock_quantity !== undefined) updateData.stock_quantity = updateData.stock_quantity !== '' ? parseInt(updateData.stock_quantity as string) : null;
+    if (updateData.min_stock_level !== undefined) updateData.min_stock_level = updateData.min_stock_level !== '' ? parseInt(updateData.min_stock_level as string) : null;
+    if (updateData.max_stock_level !== undefined) updateData.max_stock_level = updateData.max_stock_level !== '' ? parseInt(updateData.max_stock_level as string) : null;
+    if (updateData.weight !== undefined) updateData.weight = updateData.weight !== '' ? parseFloat(updateData.weight as string) : null;
+    if (updateData.barcode !== undefined && updateData.barcode === '') updateData.barcode = null;
 
     updateData.updated_at = new Date().toISOString();
 
