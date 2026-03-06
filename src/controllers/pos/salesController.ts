@@ -81,9 +81,7 @@ async function createSale(req: Request, res: Response): Promise<void> {
       barcode?: string;
     }>).map((item: any) => ({
       sales_id: sale.id,
-      sale_id: sale.id,
       product_id: item.product_id,
-      product_name: item.name || '',
       quantity: item.quantity,
       unit_price: item.price,
       discount_amount: item.discount_amount || 0,
