@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 import { generateToken } from '../../services/tokenService';
 
 async function clientLogin(req: Request, res: Response): Promise<void> {
@@ -18,7 +18,7 @@ async function clientLogin(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Find user
     console.log('🔍 Step 1: Finding user...');
@@ -142,7 +142,7 @@ async function superAdminLogin(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { data: admin, error } = await supabase
       .from('super_admins')

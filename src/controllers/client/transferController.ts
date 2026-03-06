@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Generate transfer number
 function generateTransferNumber(): string {
@@ -13,7 +13,7 @@ async function createTransferRequest(req: Request, res: Response): Promise<void>
   try {
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { from_store_id, to_store_id, product_id, quantity, reason, notes } = req.body;
 
@@ -106,7 +106,7 @@ async function getTransfers(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { status, store_id, product_id } = req.query; // Add product_id
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     let query = supabase
       .from('inventory_transfers')
@@ -153,7 +153,7 @@ async function approveTransfer(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get transfer details
     const { data: transfer, error: fetchError } = await supabase
@@ -207,7 +207,7 @@ async function completeTransfer(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🔄 Starting transfer completion for:', id);
 
@@ -490,7 +490,7 @@ async function rejectTransfer(req: Request, res: Response): Promise<void> {
     const userId = req.user!.id;
     const { id } = req.params;
     const { rejection_reason } = req.body;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { error } = await supabase
       .from('inventory_transfers')

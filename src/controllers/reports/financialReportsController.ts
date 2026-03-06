@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Get financial summary
 async function getFinancialReports(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting financial reports for company:', companyId);
 
@@ -117,7 +117,7 @@ async function getProfitMargins(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date, group_by = 'product' } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting profit margins grouped by:', group_by);
 
@@ -307,7 +307,7 @@ async function getExpenseTracking(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting expense tracking');
 
@@ -426,7 +426,7 @@ async function getTaxReports(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date, group_by = 'daily' } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting tax reports');
 
@@ -541,7 +541,7 @@ async function getRevenueByStore(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { start_date, end_date } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting revenue by store');
 

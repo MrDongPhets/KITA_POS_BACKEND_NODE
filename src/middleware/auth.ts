@@ -61,8 +61,20 @@ function requireClient(req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
+function requireClientOrStaff(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user || (req.user.userType !== 'client' && req.user.userType !== 'staff')) {
+    res.status(403).json({
+      error: 'Client or staff access required',
+      code: 'CLIENT_OR_STAFF_REQUIRED'
+    });
+    return;
+  }
+  next();
+}
+
 export {
   authenticateToken,
   requireSuperAdmin,
-  requireClient
+  requireClient,
+  requireClientOrStaff
 };

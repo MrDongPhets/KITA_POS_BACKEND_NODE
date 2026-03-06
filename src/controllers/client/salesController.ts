@@ -1,6 +1,6 @@
 // src/controllers/client/salesController.ts - Sales Management Backend
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Get all sales with filters and pagination
 async function getAllSales(req: Request, res: Response): Promise<void> {
@@ -19,7 +19,7 @@ async function getAllSales(req: Request, res: Response): Promise<void> {
       sort_order = 'desc'
     } = req.query;
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting all sales for company:', companyId);
 
@@ -130,7 +130,7 @@ async function getSaleDetails(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📄 Getting sale details:', id);
 
@@ -191,7 +191,7 @@ async function getSalesSummary(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting sales summary');
 
@@ -295,7 +295,7 @@ async function voidSale(req: Request, res: Response): Promise<void> {
     const { reason } = req.body;
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🚫 Voiding sale:', id);
 
@@ -352,7 +352,7 @@ async function getRecentSales(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, limit = 20 } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('⏰ Getting recent sales');
 

@@ -9,6 +9,7 @@ import clientRoutes from './client/index';
 import posRoutes from './pos/index';
 import staffRoutes from './staff/index';
 import reportsRoutes from './reports/index';
+import setupRoutes from './setup';
 
 const router = express.Router();
 
@@ -74,6 +75,7 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // Mount routes
+router.use('/setup', setupRoutes);
 router.use('/health', healthRoute);
 router.use('/auth', authRoutes);
 router.use('/admin', adminRoutes);

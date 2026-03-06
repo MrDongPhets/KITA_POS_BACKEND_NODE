@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function getMovements(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting inventory movements for company:', companyId);
 
@@ -63,7 +63,7 @@ async function createStockAdjustment(req: Request, res: Response): Promise<void>
   try {
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const {
       product_id,
@@ -190,7 +190,7 @@ async function createStockAdjustment(req: Request, res: Response): Promise<void>
 async function getLowStockAlerts(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🚨 Getting low stock alerts for company:', companyId);
 

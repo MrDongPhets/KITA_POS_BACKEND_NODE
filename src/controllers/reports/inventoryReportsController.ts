@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Get inventory summary
 async function getInventoryReports(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting inventory reports for company:', companyId);
 
@@ -107,7 +107,7 @@ async function getStockValue(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting stock value breakdown');
 
@@ -228,7 +228,7 @@ async function getTurnoverRates(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, days = 30 } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting turnover rates for', days, 'days');
 
@@ -371,7 +371,7 @@ async function getLowStockProducts(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, threshold_type = 'min' } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting low stock products');
 
@@ -463,7 +463,7 @@ async function getInventoryMovementSummary(req: Request, res: Response): Promise
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date, movement_type } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting inventory movement summary');
 

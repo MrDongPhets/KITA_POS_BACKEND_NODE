@@ -1,6 +1,6 @@
 // src/controllers/staff/staffAuthController.ts - Updated with activity logging
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 import bcrypt from 'bcrypt';
 import { generateToken } from '../../services/tokenService';
 
@@ -16,7 +16,7 @@ async function staffLogin(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get staff by staff_id and store_id
     const { data: staff, error } = await supabase
@@ -134,7 +134,7 @@ async function staffLogin(req: Request, res: Response): Promise<void> {
 async function staffLogout(req: Request, res: Response): Promise<void> {
   try {
     const { id: staff_id, company_id, store_id } = req.user!;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Log logout
     await supabase
@@ -167,7 +167,7 @@ async function verifyStaffToken(req: Request, res: Response): Promise<void> {
   try {
     // Token is already verified by middleware
     const staffId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { data: staff, error } = await supabase
       .from('staff')

@@ -1,6 +1,6 @@
 // src/controllers/client/manufacturingController.ts
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Check if product can be manufactured
 async function checkManufacturingAvailability(req: Request, res: Response): Promise<void> {
@@ -8,7 +8,7 @@ async function checkManufacturingAvailability(req: Request, res: Response): Prom
     const { product_id } = req.params;
     const { quantity } = req.query;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🔍 Checking manufacturing availability for product:', product_id);
 
@@ -113,7 +113,7 @@ async function manufactureProduct(req: Request, res: Response): Promise<void> {
     const { quantity, batch_number, expiry_date, notes } = req.body;
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🏭 Manufacturing product:', product_id, 'Quantity:', quantity);
 
@@ -313,7 +313,7 @@ async function getManufacturingHistory(req: Request, res: Response): Promise<voi
   try {
     const companyId = req.user!.company_id;
     const { product_id, store_id, limit = 50 } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting manufacturing history');
 

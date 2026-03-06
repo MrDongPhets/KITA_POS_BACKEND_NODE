@@ -1,12 +1,12 @@
 // src/controllers/client/dashboardController.ts - Complete with all functions
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function getDashboardOverview(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const storeFilter = req.query.store_id as string | undefined;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting dashboard overview for company:', companyId, 'store:', storeFilter || 'ALL');
 
@@ -98,7 +98,7 @@ async function getRecentSales(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const storeFilter = req.query.store_id as string | undefined;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting recent sales for company:', companyId, 'store:', storeFilter || 'ALL');
 
@@ -154,7 +154,7 @@ async function getLowStockProducts(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const storeFilter = req.query.store_id as string | undefined;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting low stock products for company:', companyId, 'store:', storeFilter || 'ALL');
 
@@ -222,7 +222,7 @@ async function getTopProducts(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const storeFilter = req.query.store_id as string | undefined;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting top products for company:', companyId, 'store:', storeFilter || 'ALL');
 
@@ -289,7 +289,7 @@ async function getTopProducts(req: Request, res: Response): Promise<void> {
 async function getStores(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🏪 Getting stores for company:', companyId);
 

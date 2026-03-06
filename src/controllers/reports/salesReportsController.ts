@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Get sales summary
 async function getSalesReports(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting sales reports for company:', companyId);
 
@@ -67,7 +67,7 @@ async function getSalesReportByPeriod(req: Request, res: Response): Promise<void
   try {
     const companyId = req.user!.company_id;
     const { period = 'daily', store_id, start_date, end_date } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting sales by period:', period);
 
@@ -178,7 +178,7 @@ async function getTopProducts(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date, limit = 10 } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting top products');
 
@@ -311,7 +311,7 @@ async function getStaffPerformance(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, start_date, end_date } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting staff performance');
 
@@ -430,7 +430,7 @@ async function getSalesComparison(req: Request, res: Response): Promise<void> {
       period2_end,
       store_id
     } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Comparing sales periods');
 

@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function getProducts(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id, category_id } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📦 Getting products for company:', companyId);
 
@@ -100,7 +100,7 @@ async function getProduct(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get store IDs for this company
     const { data: stores } = await supabase
@@ -172,7 +172,7 @@ async function createProduct(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const {
       name,
@@ -299,7 +299,7 @@ async function updateProduct(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📦 Updating product:', id, 'with data:', req.body);
 
@@ -411,7 +411,7 @@ async function deleteProduct(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📦 Deleting product:', id);
 
@@ -463,7 +463,7 @@ async function getCategories(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id } = req.query; // Add store_id filter
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📦 Getting categories for company:', companyId, 'store:', store_id || 'ALL');
 

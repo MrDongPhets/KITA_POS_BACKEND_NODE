@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function verifyToken(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.user!.id;
     const userType = req.user!.userType;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     if (userType === 'super_admin') {
       // Verify super admin still exists and is active

@@ -1,12 +1,12 @@
 // src/controllers/client/storesController.ts
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function requestStore(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { name, address, phone, description } = req.body;
 
@@ -75,7 +75,7 @@ async function requestStore(req: Request, res: Response): Promise<void> {
 async function getStores(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🏪 Getting stores for company:', companyId);
 

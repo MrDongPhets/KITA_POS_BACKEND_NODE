@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function getCategories(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📁 Getting categories for company:', companyId);
 
@@ -63,7 +63,7 @@ async function getCategory(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📁 Getting category:', id);
 
@@ -114,7 +114,7 @@ async function createCategory(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const {
       name,
@@ -230,7 +230,7 @@ async function updateCategory(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const {
       name,
@@ -334,7 +334,7 @@ async function deleteCategory(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📁 Deleting category:', id);
 

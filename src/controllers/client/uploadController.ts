@@ -1,8 +1,9 @@
 // src/controllers/client/uploadController.ts - Handle image uploads
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
 // Configure multer for file upload
 const storage = multer.memoryStorage();
@@ -27,7 +28,7 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📸 Starting image upload for company:', companyId);
 
@@ -55,50 +56,65 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
 
     console.log('📸 Generated filename:', fileName);
 
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(fileName, file.buffer, {
-        contentType: file.mimetype,
-        upsert: false
-      });
+    const isSQLiteMode = (process.env.DB_MODE || 'supabase').toLowerCase() === 'sqlite';
 
-    if (error) {
-      console.error('Supabase upload error:', error);
-      throw error;
-    }
+    let publicUrl: string;
 
-    console.log('📸 File uploaded to Supabase:', data.path);
+    if (isSQLiteMode) {
+      // SQLite mode: save file to local uploads directory
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'products', companyId!);
+      fs.mkdirSync(uploadsDir, { recursive: true });
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(fileName);
+      const localFileName = `${timestamp}_${randomString}${fileExt}`;
+      const localFilePath = path.join(uploadsDir, localFileName);
+      fs.writeFileSync(localFilePath, file.buffer);
 
-    const publicUrl = urlData.publicUrl;
-    console.log('📸 Public URL generated:', publicUrl);
+      publicUrl = `/uploads/products/${companyId!}/${localFileName}`;
+      console.log('📸 File saved locally:', localFilePath);
+    } else {
+      // Supabase mode: upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
 
-    // Optionally, save upload record to database
-    try {
-      await supabase
-        .from('file_uploads')
-        .insert([{
-          filename: fileName,
-          original_name: file.originalname,
-          mime_type: file.mimetype,
-          file_size: file.size,
-          public_url: publicUrl,
-          uploaded_by: userId,
-          company_id: companyId,
-          upload_type: 'product_image',
-          created_at: new Date().toISOString()
-        }]);
+      if (error) {
+        console.error('Supabase upload error:', error);
+        throw error;
+      }
 
-      console.log('📸 Upload record saved to database');
-    } catch (dbError) {
-      const dbErr = dbError as Error;
-      console.warn('⚠️ Failed to save upload record:', dbErr.message);
-      // Don't fail the request if we can't save the record
+      console.log('📸 File uploaded to Supabase:', data.path);
+
+      const { data: urlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      publicUrl = urlData.publicUrl;
+      console.log('📸 Public URL generated:', publicUrl);
+
+      // Save upload record to database (Supabase mode only)
+      try {
+        await supabase
+          .from('file_uploads')
+          .insert([{
+            filename: fileName,
+            original_name: file.originalname,
+            mime_type: file.mimetype,
+            file_size: file.size,
+            public_url: publicUrl,
+            uploaded_by: userId,
+            company_id: companyId,
+            upload_type: 'product_image',
+            created_at: new Date().toISOString()
+          }]);
+
+        console.log('📸 Upload record saved to database');
+      } catch (dbError) {
+        const dbErr = dbError as Error;
+        console.warn('⚠️ Failed to save upload record:', dbErr.message);
+      }
     }
 
     res.json({
@@ -135,7 +151,7 @@ async function deleteImage(req: Request, res: Response): Promise<void> {
   try {
     const filename = req.params['filename'] as string;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🗑️ Deleting image:', filename);
 
@@ -148,26 +164,36 @@ async function deleteImage(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Delete from Supabase Storage
-    const { error } = await supabase.storage
-      .from('product-images')
-      .remove([filename]);
+    const isSQLiteMode = (process.env.DB_MODE || 'supabase').toLowerCase() === 'sqlite';
 
-    if (error) {
-      console.error('Supabase delete error:', error);
-      throw error;
-    }
+    if (isSQLiteMode) {
+      // SQLite mode: delete local file
+      const localFilePath = path.join(process.cwd(), filename);
+      if (fs.existsSync(localFilePath)) {
+        fs.unlinkSync(localFilePath);
+      }
+    } else {
+      // Delete from Supabase Storage
+      const { error } = await supabase.storage
+        .from('product-images')
+        .remove([filename]);
 
-    // Update database record
-    try {
-      await supabase
-        .from('file_uploads')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('filename', filename)
-        .eq('company_id', companyId);
-    } catch (dbError) {
-      const dbErr = dbError as Error;
-      console.warn('⚠️ Failed to update upload record:', dbErr.message);
+      if (error) {
+        console.error('Supabase delete error:', error);
+        throw error;
+      }
+
+      // Update database record
+      try {
+        await supabase
+          .from('file_uploads')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('filename', filename)
+          .eq('company_id', companyId);
+      } catch (dbError) {
+        const dbErr = dbError as Error;
+        console.warn('⚠️ Failed to update upload record:', dbErr.message);
+      }
     }
 
     console.log('✅ Image deleted successfully');

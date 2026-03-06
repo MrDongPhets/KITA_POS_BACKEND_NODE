@@ -1,6 +1,70 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import path from 'path';
+import { SQLiteAdapter } from '../db/sqlite-adapter';
+import { initializeSQLiteSchema } from '../db/sqlite-schema';
 
-let supabase: SupabaseClient | null = null;
+// Unified DB client — either Supabase or SQLite adapter
+let dbClient: SupabaseClient | SQLiteAdapter | null = null;
+
+/**
+ * Returns the active database client.
+ * Both SupabaseClient and SQLiteAdapter share the .from() query API.
+ * Type as `any` to allow controllers to use either transparently.
+ */
+function getDb(): any {
+  if (!dbClient) {
+    throw new Error('Database not initialized. Call initializeDatabase() first.');
+  }
+  return dbClient;
+}
+
+/**
+ * @deprecated Use getDb() instead. Kept for backward compatibility.
+ * Will throw if DB_MODE=sqlite.
+ */
+function getSupabase(): SupabaseClient {
+  if (!dbClient) throw new Error('Database not initialized');
+  if (dbClient instanceof SQLiteAdapter) {
+    throw new Error('getSupabase() called but DB_MODE=sqlite. Use getDb() instead.');
+  }
+  return dbClient as SupabaseClient;
+}
+
+async function initializeDatabase(): Promise<boolean> {
+  const mode = (process.env.DB_MODE || 'supabase').toLowerCase();
+  console.log(`🗄️  DB_MODE: ${mode}`);
+
+  if (mode === 'sqlite') {
+    return initializeSQLite();
+  }
+  return initializeSupabase();
+}
+
+// ── SQLite ───────────────────────────────────────────────────────────────────
+
+async function initializeSQLite(): Promise<boolean> {
+  try {
+    console.log('🗄️  Initializing SQLite database...');
+
+    // Default path: next to server.js (works both in dev and packaged)
+    const dbPath = process.env.SQLITE_PATH
+      || path.join(process.cwd(), 'kitapos.db');
+
+    console.log('📁 SQLite path:', dbPath);
+
+    const adapter = new SQLiteAdapter(dbPath);
+    initializeSQLiteSchema(adapter.getDb());
+    dbClient = adapter;
+
+    console.log('✅ SQLite database ready');
+    return true;
+  } catch (err: any) {
+    console.error('❌ SQLite init failed:', err.message);
+    return false;
+  }
+}
+
+// ── Supabase ─────────────────────────────────────────────────────────────────
 
 function validateEnvVars(): boolean {
   console.log('🔍 Checking environment variables...');
@@ -13,7 +77,6 @@ function validateEnvVars(): boolean {
   };
 
   const missing: string[] = [];
-
   Object.entries(required).forEach(([key, value]) => {
     if (!value) {
       missing.push(key);
@@ -27,12 +90,11 @@ function validateEnvVars(): boolean {
     console.error('   ❌ Missing required environment variables:', missing);
     return false;
   }
-
   console.log('   ✅ All environment variables validated');
   return true;
 }
 
-async function initializeDatabase(): Promise<boolean> {
+async function initializeSupabase(): Promise<boolean> {
   try {
     console.log('🔌 Initializing Supabase client...');
 
@@ -44,45 +106,37 @@ async function initializeDatabase(): Promise<boolean> {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 
     console.log('📡 Supabase URL:', supabaseUrl);
-    console.log('🔑 Service Key exists:', !!supabaseServiceKey);
 
-    supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+    const client = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    console.log('✅ Supabase client created');
-
     // Test connection
-    const testResult = await testDatabaseConnection();
+    const { error, count } = await client
+      .from('companies')
+      .select('id', { count: 'exact', head: true })
+      .limit(1);
 
-    if (testResult.success) {
-      console.log('✅ Database connection verified');
-      return true;
-    } else {
-      console.log('❌ Database connection failed:', testResult.error);
-      throw new Error(`Database connection failed: ${testResult.error}`);
+    if (error) {
+      console.log('❌ Database connection failed:', error.message);
+      throw new Error(`Database connection failed: ${error.message}`);
     }
 
-  } catch (error) {
-    const err = error as Error;
+    console.log(`✅ Database test successful - Found ${count || 0} companies`);
+    dbClient = client;
+    return true;
+  } catch (err: any) {
     console.error('❌ Failed to initialize Supabase:', err.message);
-    console.error('Stack trace:', err.stack);
     return false;
   }
 }
 
 async function testDatabaseConnection(): Promise<{ success: boolean; error?: string; count?: number | null }> {
-  if (!supabase) {
-    return { success: false, error: 'Supabase client not initialized' };
-  }
+  if (!dbClient) return { success: false, error: 'Database not initialized' };
 
   try {
     console.log('🧪 Testing database connection...');
-
-    const { data, error, count } = await supabase
+    const { data, error, count } = await getDb()
       .from('companies')
       .select('id', { count: 'exact', head: true })
       .limit(1);
@@ -94,23 +148,14 @@ async function testDatabaseConnection(): Promise<{ success: boolean; error?: str
 
     console.log(`✅ Database test successful - Found ${count || 0} companies`);
     return { success: true, count };
-
-  } catch (error) {
-    const err = error as Error;
-    console.error('Database test exception:', err.message);
+  } catch (err: any) {
     return { success: false, error: err.message };
   }
 }
 
-function getSupabase(): SupabaseClient {
-  if (!supabase) {
-    throw new Error('Database not initialized');
-  }
-  return supabase;
-}
-
 export {
   initializeDatabase,
+  getDb,
   getSupabase,
   testDatabaseConnection
 };

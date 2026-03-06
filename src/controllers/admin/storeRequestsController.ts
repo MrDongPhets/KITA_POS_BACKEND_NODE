@@ -1,10 +1,10 @@
 // src/controllers/admin/storeRequestsController.ts
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function getStoreRequests(req: Request, res: Response): Promise<void> {
   try {
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🏪 Getting store requests for admin');
 
@@ -46,7 +46,7 @@ async function approveStore(req: Request, res: Response): Promise<void> {
   try {
     const { store_id } = req.body;
     const adminId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('✅ Approving store:', store_id);
 
@@ -145,7 +145,7 @@ async function rejectStore(req: Request, res: Response): Promise<void> {
   try {
     const { store_id, reason } = req.body;
     const adminId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('❌ Rejecting store:', store_id);
 

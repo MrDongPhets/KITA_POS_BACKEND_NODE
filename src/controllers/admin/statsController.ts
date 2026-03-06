@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function getUserStats(req: Request, res: Response): Promise<void> {
   try {
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get total users count
     const { count: totalUsers, error: usersError } = await supabase
@@ -69,7 +69,7 @@ async function getUserStats(req: Request, res: Response): Promise<void> {
 
 async function getSubscriptionStats(req: Request, res: Response): Promise<void> {
   try {
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get all active subscriptions
     const { data: subscriptions, error: subsError } = await supabase

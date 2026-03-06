@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Create sale transaction
 async function createSale(req: Request, res: Response): Promise<void> {
@@ -19,7 +19,7 @@ async function createSale(req: Request, res: Response): Promise<void> {
 
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('💳 Creating sale:', {
       store_id,
@@ -79,9 +79,11 @@ async function createSale(req: Request, res: Response): Promise<void> {
       discount_amount?: number;
       discount_percent?: number;
       barcode?: string;
-    }>).map(item => ({
+    }>).map((item: any) => ({
       sales_id: sale.id,
+      sale_id: sale.id,
       product_id: item.product_id,
+      product_name: item.name || '',
       quantity: item.quantity,
       unit_price: item.price,
       discount_amount: item.discount_amount || 0,
@@ -178,7 +180,7 @@ async function getSaleByReceipt(req: Request, res: Response): Promise<void> {
   try {
     const { receipt_number } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { data: sale, error } = await supabase
       .from('sales')
@@ -210,7 +212,7 @@ async function getTodaySales(req: Request, res: Response): Promise<void> {
   try {
     const { store_id } = req.query;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);

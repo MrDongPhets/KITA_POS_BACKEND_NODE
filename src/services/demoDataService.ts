@@ -1,8 +1,14 @@
 import bcrypt from 'bcryptjs';
-import { getSupabase } from '../config/database';
+import { getDb } from '../config/database';
 import { DEMO_CREDENTIALS, BCRYPT_ROUNDS } from '../config/constants';
 
 async function ensureDemoData(): Promise<void> {
+  // Skip demo data in SQLite/offline mode — user has their own real data from setup wizard
+  if ((process.env.DB_MODE || 'supabase').toLowerCase() === 'sqlite') {
+    console.log('📄 Demo data skipped (SQLite offline mode)');
+    return;
+  }
+
   try {
     console.log('📄 Ensuring demo data exists...');
 
@@ -18,7 +24,7 @@ async function ensureDemoData(): Promise<void> {
 }
 
 async function ensureSuperAdmin(): Promise<void> {
-  const supabase = getSupabase();
+  const supabase = getDb();
 
   const { data: existingSuperAdmin } = await supabase
     .from('super_admins')
@@ -58,7 +64,7 @@ async function ensureSuperAdmin(): Promise<void> {
 }
 
 async function ensureDemoCompanyAndUser(): Promise<void> {
-  const supabase = getSupabase();
+  const supabase = getDb();
 
   // First ensure company exists
   let { data: company } = await supabase

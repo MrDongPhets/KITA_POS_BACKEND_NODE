@@ -23,6 +23,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
 app.use('/api/client/upload', uploadRoutes);
 
+// Serve locally uploaded files (SQLite offline mode)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // ============================================
 // SWAGGER API DOCUMENTATION (Development Only)
 // ============================================

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 async function getUsers(req: Request, res: Response): Promise<void> {
   try {
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { data: users, error } = await supabase
       .from('users')

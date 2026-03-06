@@ -33,6 +33,7 @@ CREATE TABLE public.companies (
   updated_at timestamp with time zone DEFAULT now(),
   email character varying UNIQUE,
   phone character varying,
+  company_code character varying UNIQUE,
   CONSTRAINT companies_pkey PRIMARY KEY (id),
   CONSTRAINT fk_companies_created_by FOREIGN KEY (created_by) REFERENCES public.users(id)
 );

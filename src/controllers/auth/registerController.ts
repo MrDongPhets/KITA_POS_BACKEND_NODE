@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 import { BCRYPT_ROUNDS } from '../../config/constants';
 
 async function registerCompany(req: Request, res: Response): Promise<void> {
@@ -17,7 +17,7 @@ async function registerCompany(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Check existing company
     const { data: existingCompany } = await supabase
@@ -62,7 +62,8 @@ async function registerCompany(req: Request, res: Response): Promise<void> {
         address: company.address || null,
         website: company.website || null,
         is_active: true,
-        settings: {}
+        settings: {},
+        company_code: Math.random().toString(36).substring(2, 8).toUpperCase()
       }])
       .select()
       .single();

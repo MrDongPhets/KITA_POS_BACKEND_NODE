@@ -1,13 +1,13 @@
 // src/controllers/client/recipesController.ts
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Get recipe for a product
 async function getProductRecipe(req: Request, res: Response): Promise<void> {
   try {
     const { product_id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📝 Getting recipe for product:', product_id);
 
@@ -76,7 +76,7 @@ async function saveProductRecipe(req: Request, res: Response): Promise<void> {
     const { product_id } = req.params;
     const { ingredients } = req.body;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📝 Saving recipe for product:', product_id);
 
@@ -206,7 +206,7 @@ async function checkRecipeAvailability(req: Request, res: Response): Promise<voi
     const { product_id } = req.params;
     const { quantity } = req.query;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🔍 Checking recipe availability for product:', product_id);
 

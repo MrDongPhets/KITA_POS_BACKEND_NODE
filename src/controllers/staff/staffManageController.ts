@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 import bcrypt from 'bcrypt';
 
 // Create new staff
@@ -26,7 +26,7 @@ async function createStaff(req: Request, res: Response): Promise<void> {
     // Hash the passcode
     const hashedPasscode = await bcrypt.hash(passcode, 10);
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Check if staff_id already exists
     const { data: existing } = await supabase
@@ -81,7 +81,7 @@ async function createStaff(req: Request, res: Response): Promise<void> {
 async function listStaff(req: Request, res: Response): Promise<void> {
   try {
     const { company_id } = req.user!;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { data, error } = await supabase
       .from('staff')
@@ -106,7 +106,7 @@ async function updateStaff(req: Request, res: Response): Promise<void> {
     const { name, role, is_active, passcode } = req.body;
     const { company_id } = req.user!;
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString()
@@ -145,7 +145,7 @@ async function deleteStaff(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const { company_id } = req.user!;
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { error } = await supabase
       .from('staff')

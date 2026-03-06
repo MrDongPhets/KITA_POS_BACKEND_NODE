@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Search products (with barcode support)
 async function searchProducts(req: Request, res: Response): Promise<void> {
   try {
     const { query, store_id } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { data: products, error } = await supabase
       .from('products')
@@ -32,7 +32,7 @@ async function searchProducts(req: Request, res: Response): Promise<void> {
 async function getProductsByCategory(req: Request, res: Response): Promise<void> {
   try {
     const { category_id, store_id } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     let query = supabase
       .from('products')
@@ -90,7 +90,7 @@ async function calculatePrice(req: Request, res: Response): Promise<void> {
 async function checkProductAvailability(req: Request, res: Response): Promise<void> {
   try {
     const { product_id, quantity } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const { data: product } = await supabase
       .from('products')

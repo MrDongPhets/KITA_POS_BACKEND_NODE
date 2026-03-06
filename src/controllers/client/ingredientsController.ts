@@ -1,13 +1,13 @@
 // src/controllers/client/ingredientsController.ts
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 
 // Get all ingredients
 async function getIngredients(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const { store_id } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🥤 Getting ingredients for company:', companyId);
 
@@ -62,7 +62,7 @@ async function getIngredient(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🥤 Getting ingredient:', id);
 
@@ -106,7 +106,7 @@ async function createIngredient(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const {
       name,
@@ -211,7 +211,7 @@ async function updateIngredient(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     const {
       name,
@@ -307,7 +307,7 @@ async function deleteIngredient(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🥤 Deleting ingredient:', id);
 
@@ -368,7 +368,7 @@ async function updateIngredientStock(req: Request, res: Response): Promise<void>
     const { quantity, movement_type, notes } = req.body;
     const userId = req.user!.id;
     const companyId = req.user!.company_id;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('🥤 Updating ingredient stock:', id);
 
@@ -472,7 +472,7 @@ async function getIngredientMovements(req: Request, res: Response): Promise<void
   try {
     const companyId = req.user!.company_id;
     const { ingredient_id, store_id } = req.query;
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     console.log('📊 Getting ingredient movements');
 

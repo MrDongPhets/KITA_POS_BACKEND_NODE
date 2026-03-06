@@ -1,6 +1,6 @@
 // src/controllers/staff/staffPermissionsController.ts
 import { Request, Response } from 'express';
-import { getSupabase } from '../../config/database';
+import { getDb } from '../../config/database';
 import bcrypt from 'bcrypt';
 
 // Get role permissions matrix
@@ -103,7 +103,7 @@ async function updateStaffRole(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get current staff info
     const { data: staff, error: fetchError } = await supabase
@@ -177,7 +177,7 @@ async function verifyManagerOverride(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get manager by staff_id
     const { data: manager, error } = await supabase
@@ -292,7 +292,7 @@ async function logActivity(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get IP and user agent from request
     const ip_address = req.ip || (req.connection as { remoteAddress?: string }).remoteAddress;
@@ -332,7 +332,7 @@ async function getActivityLogs(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     let query = supabase
       .from('staff_activity_logs')
@@ -400,7 +400,7 @@ async function changePasscode(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const supabase = getSupabase();
+    const supabase = getDb();
 
     // Get current staff
     const { data: staff, error: fetchError } = await supabase
