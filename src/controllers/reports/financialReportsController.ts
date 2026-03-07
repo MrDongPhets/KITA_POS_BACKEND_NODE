@@ -184,6 +184,7 @@ async function getProfitMargins(req: Request, res: Response): Promise<void> {
           name,
           sku,
           default_price,
+          cost_price,
           category_id,
           categories!fk_products_category(id, name, color)
         )
@@ -213,6 +214,7 @@ async function getProfitMargins(req: Request, res: Response): Promise<void> {
       products?: {
         name?: string;
         sku?: string;
+        cost_price?: number;
         category_id?: string;
         categories?: { name?: string; color?: string };
       };
@@ -248,8 +250,10 @@ async function getProfitMargins(req: Request, res: Response): Promise<void> {
         }
       }
 
-      // Estimate cost as 70% of unit price
-      const estimatedCost = item.unit_price * 0.7;
+      // Use actual cost_price if available, otherwise estimate as 70% of unit price
+      const estimatedCost = (item.products?.cost_price != null && item.products.cost_price > 0)
+        ? item.products.cost_price
+        : item.unit_price * 0.7;
       const quantity = parseInt(String(item.quantity));
       const revenue = parseFloat(String(item.total_price));
       const itemCogs = estimatedCost * quantity;

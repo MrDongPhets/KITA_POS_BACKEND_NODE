@@ -160,24 +160,26 @@ async function saveProductRecipe(req: Request, res: Response): Promise<void> {
         return sum + (item.quantity_needed * (item.ingredients?.unit_cost || 0));
       }, 0) || 0;
 
-      // Update product as composite
+      // Update product as composite and auto-fill cost_price from recipe
       await supabase
         .from('products')
         .update({
           is_composite: true,
           recipe_cost: parseFloat(recipeCost.toFixed(4)),
+          cost_price: parseFloat(recipeCost.toFixed(4)),
           updated_at: new Date().toISOString()
         })
         .eq('id', product_id);
 
       console.log('✅ Recipe saved with', ingredients.length, 'ingredients');
     } else {
-      // No ingredients, mark as non-composite
+      // No ingredients, mark as non-composite and clear cost_price
       await supabase
         .from('products')
         .update({
           is_composite: false,
           recipe_cost: 0,
+          cost_price: 0,
           updated_at: new Date().toISOString()
         })
         .eq('id', product_id);

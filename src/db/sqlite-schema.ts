@@ -101,6 +101,7 @@ export function initializeSQLiteSchema(db: Database.Database): void {
       manila_price REAL,
       delivery_price REAL,
       wholesale_price REAL,
+      cost_price REAL DEFAULT 0,
       stock_quantity INTEGER DEFAULT 0,
       min_stock_level INTEGER DEFAULT 0,
       max_stock_level INTEGER,
@@ -358,6 +359,8 @@ export function initializeSQLiteSchema(db: Database.Database): void {
   try { db.exec('ALTER TABLE staff ADD COLUMN passcode TEXT'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE companies ADD COLUMN company_code TEXT'); } catch { /* already exists */ }
   try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code)'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE products ADD COLUMN recipe_cost REAL DEFAULT 0'); } catch { /* already exists */ }
 
   // Auto-generate company_code for existing companies that don't have one
   const companiesWithoutCode = db.prepare('SELECT id FROM companies WHERE company_code IS NULL').all() as { id: string }[];

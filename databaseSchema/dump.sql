@@ -203,6 +203,7 @@ CREATE TABLE public.products (
   manila_price numeric,
   delivery_price numeric,
   wholesale_price numeric,
+  cost_price numeric DEFAULT 0.00,
   stock_quantity integer DEFAULT 0,
   min_stock_level integer DEFAULT 5,
   max_stock_level integer DEFAULT 100,
