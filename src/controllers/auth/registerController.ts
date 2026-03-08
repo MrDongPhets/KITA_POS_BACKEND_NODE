@@ -67,7 +67,8 @@ async function registerCompany(req: Request, res: Response): Promise<void> {
         settings: {},
         company_code: Math.random().toString(36).substring(2, 8).toUpperCase(),
         subscription_status: 'trial',
-        trial_end_date: trialEndDate
+        trial_end_date: trialEndDate,
+        subscription_plan: subscription?.plan || 'basic'
       }])
       .select()
       .single();

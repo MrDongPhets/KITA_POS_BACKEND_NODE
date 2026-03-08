@@ -2,6 +2,12 @@
 import { Request, Response } from 'express';
 import { getDb } from '../../config/database';
 
+const PLAN_STORE_LIMITS: Record<string, number> = {
+  trial: 1,
+  basic: 1,
+  standard: 3,
+};
+
 async function requestStore(req: Request, res: Response): Promise<void> {
   try {
     const companyId = req.user!.company_id;
@@ -17,6 +23,32 @@ async function requestStore(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         error: 'Store name and address are required',
         code: 'VALIDATION_ERROR'
+      });
+      return;
+    }
+
+    // Check subscription plan store limit
+    const { data: company } = await supabase
+      .from('companies')
+      .select('subscription_plan')
+      .eq('id', companyId)
+      .single();
+
+    const plan = (company?.subscription_plan || 'basic') as string;
+    const limit = PLAN_STORE_LIMITS[plan] ?? 1;
+
+    const { count } = await supabase
+      .from('stores')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId);
+
+    if ((count || 0) >= limit) {
+      const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+      res.status(403).json({
+        error: `Store limit reached. Your ${planLabel} plan allows ${limit} store${limit > 1 ? 's' : ''}. Upgrade to Standard for up to 3 stores.`,
+        code: 'STORE_LIMIT_REACHED',
+        limit,
+        plan
       });
       return;
     }
@@ -76,21 +108,23 @@ async function getStores(req: Request, res: Response): Promise<void> {
 
     console.log('🏪 Getting stores for company:', companyId);
 
-    const { data: stores, error } = await supabase
-      .from('stores')
-      .select('*')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false });
+    const [storesResult, companyResult] = await Promise.all([
+      supabase.from('stores').select('*').eq('company_id', companyId).order('created_at', { ascending: false }),
+      supabase.from('companies').select('subscription_plan').eq('id', companyId).single()
+    ]);
 
-    if (error) {
-      throw error;
-    }
+    if (storesResult.error) throw storesResult.error;
 
-    console.log('✅ Stores found:', stores?.length || 0);
+    const plan = (companyResult.data?.subscription_plan || 'basic') as string;
+    const storeLimit = PLAN_STORE_LIMITS[plan] ?? 1;
+
+    console.log('✅ Stores found:', storesResult.data?.length || 0);
 
     res.json({
-      stores: stores || [],
-      count: stores?.length || 0
+      stores: storesResult.data || [],
+      count: storesResult.data?.length || 0,
+      plan,
+      store_limit: storeLimit
     });
 
   } catch (error) {

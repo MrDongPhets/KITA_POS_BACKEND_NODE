@@ -365,6 +365,7 @@ export function initializeSQLiteSchema(db: Database.Database): void {
   try { db.exec("ALTER TABLE companies ADD COLUMN subscription_status TEXT DEFAULT 'trial'"); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE companies ADD COLUMN trial_end_date TEXT'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE companies ADD COLUMN subscription_end_date TEXT'); } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE companies ADD COLUMN subscription_plan TEXT DEFAULT 'basic'"); } catch { /* already exists */ }
 
   // Set trial_end_date for existing companies that don't have one (30 days from now)
   const companiesWithoutTrial = db.prepare("SELECT id FROM companies WHERE trial_end_date IS NULL AND subscription_status = 'trial'").all() as { id: string }[];
