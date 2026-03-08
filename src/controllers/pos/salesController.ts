@@ -19,6 +19,7 @@ async function createSale(req: Request, res: Response): Promise<void> {
 
     const companyId = req.user!.company_id;
     const userId = req.user!.id;
+    const isStaff = req.user!.userType === 'staff';
     const supabase = getDb();
 
     console.log('💳 Creating sale:', {
@@ -47,7 +48,7 @@ async function createSale(req: Request, res: Response): Promise<void> {
       .insert({
         company_id: companyId,
         store_id,
-        staff_id: null,
+        staff_id: isStaff ? userId : null,
         total_amount,
         subtotal: subtotal || total_amount,
         discount_amount: discount_amount || 0,
@@ -58,7 +59,7 @@ async function createSale(req: Request, res: Response): Promise<void> {
         receipt_number,
         items_count: (items as Array<{ quantity: number }>).reduce((sum, item) => sum + item.quantity, 0),
         notes: notes || null,
-        created_by: userId
+        created_by: isStaff ? null : userId
       })
       .select()
       .single();
@@ -145,7 +146,7 @@ async function createSale(req: Request, res: Response): Promise<void> {
           reference_type: 'sale',
           reference_id: sale.id,
           notes: `Sale ${receipt_number}`,
-          created_by: userId
+          created_by: isStaff ? null : userId
         });
 
       if (movementError) {
