@@ -361,6 +361,7 @@ export function initializeSQLiteSchema(db: Database.Database): void {
   try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_company_code ON companies(company_code)'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE products ADD COLUMN recipe_cost REAL DEFAULT 0'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE products ADD COLUMN expiry_date TEXT'); } catch { /* already exists */ }
 
   // Auto-generate company_code for existing companies that don't have one
   const companiesWithoutCode = db.prepare('SELECT id FROM companies WHERE company_code IS NULL').all() as { id: string }[];

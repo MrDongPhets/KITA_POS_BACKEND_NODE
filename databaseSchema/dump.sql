@@ -220,6 +220,7 @@ CREATE TABLE public.products (
   updated_at timestamp with time zone DEFAULT now(),
   is_composite boolean DEFAULT false,
   recipe_cost numeric DEFAULT 0.00,
+  expiry_date timestamp with time zone,
   CONSTRAINT products_pkey PRIMARY KEY (id),
   CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES public.categories(id),
   CONSTRAINT fk_products_store FOREIGN KEY (store_id) REFERENCES public.stores(id),

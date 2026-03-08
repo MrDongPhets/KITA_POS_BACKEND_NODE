@@ -186,6 +186,7 @@ async function createProduct(req: Request, res: Response): Promise<void> {
       delivery_price,
       wholesale_price,
       cost_price,
+      expiry_date,
       stock_quantity,
       min_stock_level,
       max_stock_level,
@@ -265,6 +266,7 @@ async function createProduct(req: Request, res: Response): Promise<void> {
         delivery_price: delivery_price ? parseFloat(delivery_price) : null,
         wholesale_price: wholesale_price ? parseFloat(wholesale_price) : null,
         cost_price: cost_price ? parseFloat(cost_price) : null,
+        expiry_date: expiry_date || null,
         stock_quantity: productStock,  // NULL for composite
         min_stock_level: is_composite ? null : parseInt(min_stock_level || 5),
         max_stock_level: is_composite ? null : parseInt(max_stock_level || 100),
@@ -368,6 +370,7 @@ async function updateProduct(req: Request, res: Response): Promise<void> {
     if (updateData.delivery_price !== undefined) updateData.delivery_price = updateData.delivery_price !== '' ? parseFloat(updateData.delivery_price as string) : null;
     if (updateData.wholesale_price !== undefined) updateData.wholesale_price = updateData.wholesale_price !== '' ? parseFloat(updateData.wholesale_price as string) : null;
     if (updateData.cost_price !== undefined) updateData.cost_price = updateData.cost_price !== '' ? parseFloat(updateData.cost_price as string) : null;
+    if (updateData.expiry_date !== undefined) updateData.expiry_date = updateData.expiry_date !== '' ? updateData.expiry_date : null;
     if (updateData.stock_quantity !== undefined) updateData.stock_quantity = updateData.stock_quantity !== '' ? parseInt(updateData.stock_quantity as string) : null;
     if (updateData.min_stock_level !== undefined) updateData.min_stock_level = updateData.min_stock_level !== '' ? parseInt(updateData.min_stock_level as string) : null;
     if (updateData.max_stock_level !== undefined) updateData.max_stock_level = updateData.max_stock_level !== '' ? parseInt(updateData.max_stock_level as string) : null;
