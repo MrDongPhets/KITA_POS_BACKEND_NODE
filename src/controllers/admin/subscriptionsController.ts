@@ -17,10 +17,11 @@ async function getSubscriptions(req: Request, res: Response): Promise<void> {
     const now = new Date();
     const enriched = (companies || []).map((c: any) => {
       let daysLeft: number | null = null;
-      if (c.subscription_status === 'trial' && c.trial_end_date) {
-        daysLeft = Math.ceil((new Date(c.trial_end_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      } else if (c.subscription_status === 'active' && c.subscription_end_date) {
-        daysLeft = Math.ceil((new Date(c.subscription_end_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const endDate = c.subscription_status === 'active'
+        ? c.subscription_end_date
+        : c.trial_end_date;
+      if (endDate) {
+        daysLeft = Math.ceil((new Date(endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       }
       return { ...c, days_left: daysLeft };
     });

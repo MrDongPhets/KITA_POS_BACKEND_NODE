@@ -27,7 +27,7 @@ router.get('/company', async (req: Request, res: Response) => {
     const db = getDb();
     const { data: companies, error } = await db
       .from('companies')
-      .select('id, name, company_code, contact_email, contact_phone, address, website, logo_url')
+      .select('id, name, company_code, contact_email, contact_phone, address, website, logo_url, subscription_status, trial_end_date, subscription_end_date')
       .eq('id', req.user!.company_id)
       .limit(1);
 
@@ -35,7 +35,14 @@ router.get('/company', async (req: Request, res: Response) => {
       res.status(404).json({ error: 'Company not found' });
       return;
     }
-    res.json({ company: companies[0] });
+    const company = companies[0];
+    const endDate = company.subscription_status === 'active'
+      ? company.subscription_end_date
+      : company.trial_end_date;
+    const daysLeft = endDate
+      ? Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : null;
+    res.json({ company: { ...company, days_left: daysLeft } });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
