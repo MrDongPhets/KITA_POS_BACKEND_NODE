@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedUser } from '../types/express.d';
+import { getDb } from '../config/database';
 
 function authenticateToken(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers['authorization'];
@@ -72,9 +73,72 @@ function requireClientOrStaff(req: Request, res: Response, next: NextFunction): 
   next();
 }
 
+async function requireActiveSubscription(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const companyId = req.user?.company_id;
+    if (!companyId) {
+      next();
+      return;
+    }
+
+    const supabase = getDb();
+    const { data: company } = await supabase
+      .from('companies')
+      .select('subscription_status, trial_end_date, subscription_end_date')
+      .eq('id', companyId)
+      .single();
+
+    if (!company) {
+      next();
+      return;
+    }
+
+    const status = company.subscription_status || 'trial';
+    const now = new Date();
+
+    // Active paid subscription
+    if (status === 'active') {
+      const subEnd = company.subscription_end_date ? new Date(company.subscription_end_date) : null;
+      if (!subEnd || subEnd > now) {
+        next();
+        return;
+      }
+      // Subscription ended — mark expired
+      await supabase.from('companies').update({ subscription_status: 'expired' }).eq('id', companyId);
+      res.status(403).json({ error: 'Subscription expired', code: 'SUBSCRIPTION_EXPIRED' });
+      return;
+    }
+
+    // Trial period
+    if (status === 'trial') {
+      const trialEnd = company.trial_end_date ? new Date(company.trial_end_date) : null;
+      if (trialEnd && trialEnd > now) {
+        next();
+        return;
+      }
+      // Trial ended
+      await supabase.from('companies').update({ subscription_status: 'expired' }).eq('id', companyId);
+      res.status(403).json({ error: 'Trial period has ended. Please subscribe to continue.', code: 'SUBSCRIPTION_EXPIRED' });
+      return;
+    }
+
+    // Expired or suspended
+    if (status === 'expired' || status === 'suspended') {
+      res.status(403).json({ error: 'Subscription expired. Please contact support to reactivate.', code: 'SUBSCRIPTION_EXPIRED' });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    // On middleware error, don't block the request
+    next();
+  }
+}
+
 export {
   authenticateToken,
   requireSuperAdmin,
   requireClient,
-  requireClientOrStaff
+  requireClientOrStaff,
+  requireActiveSubscription
 };

@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { authenticateToken, requireClient } from '../../middleware/auth';
+import { authenticateToken, requireClient, requireActiveSubscription } from '../../middleware/auth';
 import { getDb } from '../../config/database';
 
 import dashboardRoutes from './dashboard';
@@ -19,6 +19,7 @@ const router = express.Router();
 // Apply authentication to all client routes
 router.use(authenticateToken);
 router.use(requireClient);
+router.use(requireActiveSubscription);
 
 // GET /client/company — returns company info including company_code
 router.get('/company', async (req: Request, res: Response) => {

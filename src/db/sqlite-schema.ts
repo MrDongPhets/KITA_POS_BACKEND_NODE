@@ -362,6 +362,16 @@ export function initializeSQLiteSchema(db: Database.Database): void {
   try { db.exec('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE products ADD COLUMN recipe_cost REAL DEFAULT 0'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE products ADD COLUMN expiry_date TEXT'); } catch { /* already exists */ }
+  try { db.exec("ALTER TABLE companies ADD COLUMN subscription_status TEXT DEFAULT 'trial'"); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE companies ADD COLUMN trial_end_date TEXT'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE companies ADD COLUMN subscription_end_date TEXT'); } catch { /* already exists */ }
+
+  // Set trial_end_date for existing companies that don't have one (30 days from now)
+  const companiesWithoutTrial = db.prepare("SELECT id FROM companies WHERE trial_end_date IS NULL AND subscription_status = 'trial'").all() as { id: string }[];
+  const defaultTrialEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  for (const company of companiesWithoutTrial) {
+    db.prepare('UPDATE companies SET trial_end_date = ? WHERE id = ?').run(defaultTrialEnd, company.id);
+  }
 
   // Auto-generate company_code for existing companies that don't have one
   const companiesWithoutCode = db.prepare('SELECT id FROM companies WHERE company_code IS NULL').all() as { id: string }[];

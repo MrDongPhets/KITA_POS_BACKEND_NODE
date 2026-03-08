@@ -21,13 +21,10 @@ async function requestStore(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // NO LIMIT CHECK HERE - Allow unlimited pending store requests
-    // The limit will be enforced when admin approves the store
-
     // Generate unique store ID
     const storeId = `store_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Create store request
+    // Create store directly as active — no admin approval needed
     const { data: store, error } = await supabase
       .from('stores')
       .insert({
@@ -37,11 +34,11 @@ async function requestStore(req: Request, res: Response): Promise<void> {
         phone: phone?.trim() || null,
         company_id: companyId,
         created_by: userId,
-        status: 'pending',
-        is_active: false,
+        status: 'active',
+        is_active: true,
         settings: {
           description: description?.trim() || null,
-          requested_at: new Date().toISOString()
+          created_at: new Date().toISOString()
         }
       })
       .select()
@@ -51,10 +48,10 @@ async function requestStore(req: Request, res: Response): Promise<void> {
       throw error;
     }
 
-    console.log('✅ Store request created:', store.id);
+    console.log('✅ Store created:', store.id);
 
     res.status(201).json({
-      message: 'Store request submitted successfully',
+      message: 'Store created successfully',
       store: {
         id: store.id,
         name: store.name,

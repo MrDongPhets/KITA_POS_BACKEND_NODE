@@ -51,6 +51,8 @@ async function registerCompany(req: Request, res: Response): Promise<void> {
 
     const hashedPassword = await bcrypt.hash(user.password, BCRYPT_ROUNDS);
 
+    const trialEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
     // Create company
     const { data: newCompany, error: companyError } = await supabase
       .from('companies')
@@ -63,7 +65,9 @@ async function registerCompany(req: Request, res: Response): Promise<void> {
         website: company.website || null,
         is_active: true,
         settings: {},
-        company_code: Math.random().toString(36).substring(2, 8).toUpperCase()
+        company_code: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        subscription_status: 'trial',
+        trial_end_date: trialEndDate
       }])
       .select()
       .single();
