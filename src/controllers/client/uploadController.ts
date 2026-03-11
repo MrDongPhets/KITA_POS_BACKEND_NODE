@@ -4,6 +4,31 @@ import { getDb } from '../../config/database';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+
+// Configure R2 client
+const r2Client = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT!,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY!,
+    secretAccessKey: process.env.R2_SECRET_KEY!,
+  },
+});
+
+const R2_BUCKET = process.env.R2_BUCKET!;
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL!;
+
+// Folder structure:
+// kitapos-storage/
+// └── stores/
+//     └── {company_id}/
+//         ├── products/
+//         ├── logos/
+//         └── receipts/
+
+const ALLOWED_FOLDERS = ['products', 'logos', 'receipts'] as const;
+type UploadFolder = typeof ALLOWED_FOLDERS[number];
 
 // Configure multer for file upload
 const storage = multer.memoryStorage();
@@ -13,9 +38,7 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    // Check file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -30,14 +53,16 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
     const userId = req.user!.id;
     const supabase = getDb();
 
-    console.log('📸 Starting image upload for company:', companyId);
+    // Get upload folder from query param, default to 'products'
+    const uploadType = (req.query.type as string) || 'products';
+    const folder: UploadFolder = ALLOWED_FOLDERS.includes(uploadType as UploadFolder)
+      ? (uploadType as UploadFolder)
+      : 'products';
 
-    // Check if file exists
+    console.log('📸 Starting image upload for company:', companyId, '| folder:', folder);
+
     if (!req.file) {
-      res.status(400).json({
-        error: 'No file provided',
-        code: 'NO_FILE'
-      });
+      res.status(400).json({ error: 'No file provided', code: 'NO_FILE' });
       return;
     }
 
@@ -48,11 +73,11 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
       size: file.size
     });
 
-    // Generate unique filename
+    // Generate unique filename under stores/{companyId}/{folder}/
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExt = path.extname(file.originalname);
-    const fileName = `products/${companyId}/${timestamp}_${randomString}${fileExt}`;
+    const fileName = `stores/${companyId}/${folder}/${timestamp}_${randomString}${fileExt}`;
 
     console.log('📸 Generated filename:', fileName);
 
@@ -62,39 +87,31 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
 
     if (isSQLiteMode) {
       // SQLite mode: save file to local uploads directory
-      const uploadsDir = path.join(process.cwd(), 'uploads', 'products', companyId!);
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'stores', companyId!, folder);
       fs.mkdirSync(uploadsDir, { recursive: true });
 
       const localFileName = `${timestamp}_${randomString}${fileExt}`;
       const localFilePath = path.join(uploadsDir, localFileName);
       fs.writeFileSync(localFilePath, file.buffer);
 
-      publicUrl = `/uploads/products/${companyId!}/${localFileName}`;
+      publicUrl = `/uploads/stores/${companyId!}/${folder}/${localFileName}`;
       console.log('📸 File saved locally:', localFilePath);
     } else {
-      // Supabase mode: upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('product-images')
-        .upload(fileName, file.buffer, {
-          contentType: file.mimetype,
-          upsert: false
-        });
+      // R2 mode: upload to Cloudflare R2
+      const uploadCommand = new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: fileName,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      });
 
-      if (error) {
-        console.error('Supabase upload error:', error);
-        throw error;
-      }
+      await r2Client.send(uploadCommand);
+      console.log('📸 File uploaded to R2:', fileName);
 
-      console.log('📸 File uploaded to Supabase:', data.path);
-
-      const { data: urlData } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(fileName);
-
-      publicUrl = urlData.publicUrl;
+      publicUrl = `${R2_PUBLIC_URL}/${fileName}`;
       console.log('📸 Public URL generated:', publicUrl);
 
-      // Save upload record to database (Supabase mode only)
+      // Save upload record to database
       try {
         await supabase
           .from('file_uploads')
@@ -106,7 +123,7 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
             public_url: publicUrl,
             uploaded_by: userId,
             company_id: companyId,
-            upload_type: 'product_image',
+            upload_type: folder,
             created_at: new Date().toISOString()
           }]);
 
@@ -121,6 +138,7 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
       message: 'Image uploaded successfully',
       url: publicUrl,
       filename: fileName,
+      folder,
       size: file.size,
       type: file.mimetype
     });
@@ -140,10 +158,7 @@ async function uploadImage(req: Request, res: Response): Promise<void> {
       errorMessage = 'File size must be less than 5MB';
     }
 
-    res.status(statusCode).json({
-      error: errorMessage,
-      code: 'UPLOAD_ERROR'
-    });
+    res.status(statusCode).json({ error: errorMessage, code: 'UPLOAD_ERROR' });
   }
 }
 
@@ -156,11 +171,8 @@ async function deleteImage(req: Request, res: Response): Promise<void> {
     console.log('🗑️ Deleting image:', filename);
 
     // Verify the file belongs to this company
-    if (!filename.includes(`products/${companyId}/`)) {
-      res.status(403).json({
-        error: 'Unauthorized to delete this file',
-        code: 'UNAUTHORIZED'
-      });
+    if (!filename.includes(`stores/${companyId}/`)) {
+      res.status(403).json({ error: 'Unauthorized to delete this file', code: 'UNAUTHORIZED' });
       return;
     }
 
@@ -173,15 +185,14 @@ async function deleteImage(req: Request, res: Response): Promise<void> {
         fs.unlinkSync(localFilePath);
       }
     } else {
-      // Delete from Supabase Storage
-      const { error } = await supabase.storage
-        .from('product-images')
-        .remove([filename]);
+      // R2 mode: delete from Cloudflare R2
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: filename,
+      });
 
-      if (error) {
-        console.error('Supabase delete error:', error);
-        throw error;
-      }
+      await r2Client.send(deleteCommand);
+      console.log('✅ File deleted from R2:', filename);
 
       // Update database record
       try {
@@ -196,22 +207,12 @@ async function deleteImage(req: Request, res: Response): Promise<void> {
       }
     }
 
-    console.log('✅ Image deleted successfully');
-
-    res.json({
-      message: 'Image deleted successfully'
-    });
+    res.json({ message: 'Image deleted successfully' });
 
   } catch (error) {
     console.error('Delete image error:', error);
-    res.status(500).json({
-      error: 'Failed to delete image',
-      code: 'DELETE_ERROR'
-    });
+    res.status(500).json({ error: 'Failed to delete image', code: 'DELETE_ERROR' });
   }
 }
 
-export {
-  uploadImage,
-  deleteImage
-};
+export { uploadImage, deleteImage };
