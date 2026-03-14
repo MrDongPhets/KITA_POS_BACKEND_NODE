@@ -4,6 +4,10 @@ import { getDb } from '../../config/database';
 
 const PLAN_STORE_LIMITS: Record<string, number> = {
   trial: 1,
+  // TindaPOS plans
+  negosyo: 1,
+  'laking-negosyo': 5,
+  // Legacy plan IDs (backward compat)
   basic: 1,
   standard: 3,
 };
