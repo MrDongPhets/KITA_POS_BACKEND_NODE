@@ -78,6 +78,53 @@ async function verifyToken(req: Request, res: Response): Promise<void> {
   }
 }
 
+async function getMe(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const userType = req.user!.userType;
+    const supabase = getDb();
+
+    if (userType === 'super_admin') {
+      const { data: admin } = await supabase
+        .from('super_admins')
+        .select('id, email, full_name, role, is_active')
+        .eq('id', userId)
+        .single();
+      res.json({ user: admin, userType: 'super_admin' });
+      return;
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('*, companies(*)')
+      .eq('id', userId)
+      .eq('is_active', true)
+      .single();
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('company_id', user.company_id)
+      .single();
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      user: userWithoutPassword,
+      company: user.companies,
+      subscription,
+      userType: 'client',
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get user data' });
+  }
+}
+
 function cleanup(req: Request, res: Response): void {
   res.json({
     message: 'Session cleanup successful',
@@ -85,4 +132,4 @@ function cleanup(req: Request, res: Response): void {
   });
 }
 
-export { verifyToken, cleanup };
+export { verifyToken, getMe, cleanup };

@@ -7,7 +7,9 @@ import {
 } from '../../controllers/auth/loginController';
 import { registerCompany } from '../../controllers/auth/registerController';
 import { authenticateToken } from '../../middleware/auth';
-import { verifyToken, cleanup } from '../../controllers/auth/verifyController';
+import { verifyToken, getMe, cleanup } from '../../controllers/auth/verifyController';
+import { googleRedirect, googleCallback } from '../../controllers/auth/googleController';
+import { forgotPassword, resetPassword } from '../../controllers/auth/forgotPasswordController';
 
 const router = express.Router();
 
@@ -260,5 +262,16 @@ router.get('/verify', authenticateToken, verifyToken);
  *         description: Unauthorized
  */
 router.post('/cleanup', authenticateToken, cleanup);
+
+// Google OAuth
+router.get('/google', googleRedirect);
+router.get('/google/callback', googleCallback);
+
+// Password reset
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+
+// Get current user's full profile (used after Google OAuth token redirect)
+router.get('/me', authenticateToken, getMe);
 
 export default router;

@@ -3,6 +3,35 @@ import { Request, Response } from 'express';
 import { getDb } from '../../config/database';
 import { generateToken } from '../../services/tokenService';
 
+// In-memory rate limiter: email → { attempts, lockedUntil }
+const loginAttempts = new Map<string, { attempts: number; lockedUntil: number }>();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+function checkRateLimit(email: string): { locked: boolean; minutesLeft?: number } {
+  const record = loginAttempts.get(email);
+  if (!record) return { locked: false };
+  if (record.lockedUntil && Date.now() < record.lockedUntil) {
+    const minutesLeft = Math.ceil((record.lockedUntil - Date.now()) / 60000);
+    return { locked: true, minutesLeft };
+  }
+  return { locked: false };
+}
+
+function recordFailedAttempt(email: string): void {
+  const record = loginAttempts.get(email) || { attempts: 0, lockedUntil: 0 };
+  record.attempts += 1;
+  if (record.attempts >= MAX_ATTEMPTS) {
+    record.lockedUntil = Date.now() + LOCKOUT_MS;
+    console.log(`🔐 Account temporarily locked: ${email} (${MAX_ATTEMPTS} failed attempts)`);
+  }
+  loginAttempts.set(email, record);
+}
+
+function clearAttempts(email: string): void {
+  loginAttempts.delete(email);
+}
+
 async function clientLogin(req: Request, res: Response): Promise<void> {
   try {
     const { email, password } = req.body;
@@ -14,6 +43,16 @@ async function clientLogin(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         error: 'Email and password are required',
         code: 'MISSING_CREDENTIALS'
+      });
+      return;
+    }
+
+    // Rate limit check
+    const rateLimit = checkRateLimit(email.toLowerCase());
+    if (rateLimit.locked) {
+      res.status(429).json({
+        error: `Too many failed attempts. Please try again in ${rateLimit.minutesLeft} minute${rateLimit.minutesLeft === 1 ? '' : 's'}.`,
+        code: 'RATE_LIMITED'
       });
       return;
     }
@@ -30,6 +69,7 @@ async function clientLogin(req: Request, res: Response): Promise<void> {
 
     if (userCheckError || !userCheck) {
       console.log(`❌ User not found: ${email}`);
+      recordFailedAttempt(email.toLowerCase());
       res.status(401).json({
         error: 'Invalid email or password',
         code: 'INVALID_CREDENTIALS'
@@ -54,8 +94,13 @@ async function clientLogin(req: Request, res: Response): Promise<void> {
 
     if (!isValidPassword) {
       console.log('❌ Invalid password');
+      recordFailedAttempt(email.toLowerCase());
+      const after = loginAttempts.get(email.toLowerCase());
+      const remaining = MAX_ATTEMPTS - (after?.attempts || 0);
       res.status(401).json({
-        error: 'Invalid email or password',
+        error: remaining > 0
+          ? `Invalid email or password. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
+          : `Too many failed attempts. Account locked for 5 minutes.`,
         code: 'INVALID_CREDENTIALS'
       });
       return;
@@ -104,6 +149,7 @@ async function clientLogin(req: Request, res: Response): Promise<void> {
       .eq('company_id', user.company_id)
       .single();
 
+    clearAttempts(email.toLowerCase());
     const token = generateToken(user, 'client');
     const { password: _, ...userWithoutPassword } = user;
 
@@ -197,7 +243,7 @@ async function superAdminLogin(req: Request, res: Response): Promise<void> {
   }
 }
 
-function logout(req: Request, res: Response): void {
+function logout(_req: Request, res: Response): void {
   console.log('✅ Logout request processed');
   res.json({
     message: 'Logout successful',
