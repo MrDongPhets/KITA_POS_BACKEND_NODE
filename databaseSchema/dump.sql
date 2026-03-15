@@ -271,7 +271,7 @@ CREATE TABLE public.staff (
   name character varying NOT NULL,
   store_id character varying NOT NULL,
   passcode character varying NOT NULL,
-  role character varying NOT NULL DEFAULT 'staff'::character varying CHECK (role::text = ANY (ARRAY['staff'::character varying, 'supervisor'::character varying]::text[])),
+  role character varying NOT NULL DEFAULT 'staff'::character varying CHECK (role::text = ANY (ARRAY['staff'::character varying, 'supervisor'::character varying, 'manager'::character varying, 'admin'::character varying]::text[])),
   hourly_rate numeric DEFAULT 15.00,
   image_url text,
   is_active boolean DEFAULT true,

@@ -12,8 +12,8 @@ function checkPermission(requiredRole: string) {
       return;
     }
 
-    // Super admin has all permissions
-    if (user.userType === 'super_admin') {
+    // Super admin and client (company owner) have all permissions
+    if (user.userType === 'super_admin' || user.userType === 'client') {
       return next();
     }
 
